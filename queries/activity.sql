@@ -110,71 +110,65 @@ WHERE tipo_episodio = 'Urgencia'
 GROUP BY nivel_triaje, resultado
 ORDER BY duracion_media DESC
 
--- Evolución de episodios por periodo
--- Citas asociadas a episodios
+-- Evolución de episodios por periodo (día, mes, año)
+SELECT
+    EXTRACT(MONTH FROM inicio) AS mes,
+    COUNT(*) AS recuento
+FROM episodio
+GROUP BY mes
+ORDER BY mes;
 
+SELECT
+    EXTRACT(DAY FROM inicio) AS dia,
+    COUNT(*) AS recuento
+FROM episodio
+GROUP BY dia
+ORDER BY dia;
 
-
--- PACIENTES
-
--- Perfil del paciente más habitual en el centro
--- Tasa de no presentación del paciente
--- Pacientes con más citas
--- Pacientes sin vacunaciones
--- Distribución de edad
-
--- HCE
-
--- Medicamentos y principio activo más comunes entre los pacientes.
--- Alergias más comunes entre los pacientes.
--- Nº de vacunas administradas por (periodo de tiempo)
--- Hábitos perjudiciales y tóxicos más frecuentes entre los pacientes.
--- Antecedentes más frecuentes entre los pacientes
--- Distribución por tipo de antecedente
+SELECT
+    EXTRACT(YEAR FROM inicio) AS año,
+    COUNT(*) AS recuento
+FROM episodio
+GROUP BY año
+ORDER BY año;
 
 /*
-Obtener todos los registros relacionados con la historia clínica deL paciente con DNI '44556677D'.
-Mostrar todas la información de cada regisstro, el nombre y los apellidos del paciente.
+Citas asociadas a episodios
+Se podría saber si una cita está asociada a un episodio si la fecha de la cita, el paciente y el profesional coinciden.
+La hora te atención real (es decir, de inicio del episodio) no siempre coincidirá con la hora prevista para la cita.
+Lo mismo sucede con el final de la cita y del episodio. Por ese motivo, utilizar la hora exacta no es fiable para inferir
+la relación entre citas y episodios.
 
-Las diferencias en la cantidad de columnas impide usar UNION ALL
 */
 
-SELECT p.nombre, p.apellido1, p.apellido2 ,r.*
-FROM registro_antecedentes r JOIN pacientes p ON r.id = p.id
-WHERE p.num_id = '44556677D';
-
-SELECT p.nombre, p.apellido1, p.apellido2 ,r.*
-FROM registro_antecedentes_familiares r JOIN pacientes p ON r.id = p.id
-WHERE p.num_id = '44556677D';
-
-SELECT p.nombre, p.apellido1, p.apellido2 ,r.*
-FROM registro_dispositivos r JOIN pacientes p ON r.id = p.id
-WHERE p.num_id = '44556677D';
-
-SELECT p.nombre, p.apellido1, p.apellido2 ,r.*
-FROM registro_alergias r JOIN pacientes p ON r.id = p.id
-WHERE p.num_id = '44556677D';
-
-SELECT p.nombre, p.apellido1, p.apellido2 ,r.*
-FROM registro_situaciones_funcionales r JOIN pacientes p ON r.id = p.id
-WHERE p.num_id = '44556677D';
-
-SELECT p.nombre, p.apellido1, p.apellido2 ,r.*
-FROM registro_habitos r JOIN pacientes p ON r.id = p.id
-WHERE p.num_id = '44556677D';
-
-SELECT p.nombre, p.apellido1, p.apellido2 ,r.*
-FROM registro_toxicos r JOIN pacientes p ON r.id = p.id
-WHERE p.num_id = '44556677D';
-
-SELECT p.nombre, p.apellido1, p.apellido2 ,r.*
-FROM registro_vacunaciones r JOIN pacientes p ON r.id = p.id
-WHERE p.num_id = '44556677D';
-
-SELECT p.nombre, p.apellido1, p.apellido2 ,r.*
-FROM registro_medicamentos r JOIN pacientes p ON r.id = p.id
-WHERE p.num_id = '44556677D';
-
-SELECT p.nombre, p.apellido1, p.apellido2 ,r.*
-FROM registro_formulas_magistrales r JOIN pacientes p ON r.id = p.id
-WHERE p.num_id = '44556677D';
+ -- Extraemos el sanitario, el paciente y la fecha de las citas (sin hora)
+WITH 
+fechas_cita AS (                   
+    SELECT 
+        id_sanitario,
+        id_paciente,
+        DATE(inicio) as fecha_cita
+    FROM citas
+),
+-- Extraemos los detalles de episodio el sanitario. La fecha sin hora.
+fechas_episodio AS (                
+    SELECT 
+        id as id_episodio,
+        id_sanitario,
+        id_paciente,
+        tipo_episodio,
+        procedencia,
+        tipo_consulta,
+        id_snomed_motivo_consulta,
+        DATE(inicio) as fecha_episodio
+    FROM episodio
+)
+-- Usamos JOIN (INNER JOIN) para obtener solo las coincidencias con los detalles del episodio
+SELECT fe.*                                         
+FROM fechas_cita fc JOIN fechas_episodio fe ON (
+    fc.id_sanitario = fe.id_sanitario
+    AND
+    fc.id_paciente = fe.id_paciente
+    AND
+    fc.fecha_cita = fe.fecha_episodio
+)
