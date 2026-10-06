@@ -34,6 +34,8 @@ cd Primary_Healthcare_DB
 
 La base de datos puede utilizarse para realizar consultas SQL sobre la información de pacientes, personal, actividad asistencial e historia clínica. En `queries/queries.sql` se encuentran disponibles varias consultas de ejemplo.
 
+Los datos también pueden ser visualizados mediante power BI. Se incluyen visualizaciones de ejemplo en el dashboard localizado en ``dashboard/dashboard.pbix`.
+
 ## Fuentes y referencias
 
 El diseño se ha basado parcialmente en normativa y documentación sanitaria pública, incluyendo:
